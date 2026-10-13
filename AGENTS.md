@@ -34,3 +34,13 @@ offers the same steps as tools.
   [docs/COMMUNITY_BENCHMARKS.md](docs/COMMUNITY_BENCHMARKS.md), compare against a same-day run of the build you are
   testing, and say what you did not test.
 - Open test requests and the hardware that is wanted are listed in [docs/TEST_REQUESTS.md](docs/TEST_REQUESTS.md).
+
+## Agent turn latency
+
+Most of a turn's time is the model rereading its context and then writing; how long a local tool runs rarely matters.
+
+- **Fewer turns:** make independent reads, searches and commands parallel tool calls in one turn. When several steps feed one decision, run them as one script or command instead of a turn each.
+- **Small tool output:** everything a tool returns is reread on every later turn. Narrow it first with `rg`, `head`, `git diff --stat`, test summaries and exact line ranges; send long logs to a file and read only the part you need.
+- **Stable prompt prefix:** do not add, remove or reconfigure tools or MCP servers mid-session unless that is the task. A changed tool list invalidates the cached prefix that every later turn rereads.
+- **Compact long sessions:** at a natural boundary in a long task, commit usable work, write a short handoff (done, remaining, next step, evidence paths), and continue in a fresh session instead of carrying the whole history.
+- **Code that calls a model API:** stream responses and act on each tool call as soon as its block is complete; reuse one long-lived HTTP client per process instead of reconnecting per request; put stable content (system prompt, tool definitions, reference material) first and per-request content (timestamps, IDs, user input) last so prompt caching hits.
